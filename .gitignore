@@ -1,0 +1,49 @@
+# Build folders
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# Visual Studio files
+.vscode/
+*.VC.db
+*.VC.opendb
+*.sln
+*.suo
+*.user
+*.userosscache
+*.opensdf
+*.sdf
+*.ipch
+*.db
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Compiled assets
+*.pdb
+*.obj
+*.exe
+*.dll
+*.lib
+*.app
+*.dylib
+*.exp
+
+# Unreal-specific
+*.xcodeproj
+*.xcworkspace
+*.xcuserdata
+*.idea/
+*.vs/
+*.opensdf
+*.uprojectdirs
+Script/
+.vs/
+
+# Ignore config override files (optional)
+Config/DefaultEditorPerProjectUserSettings.ini
+Config/DefaultEditor.ini
