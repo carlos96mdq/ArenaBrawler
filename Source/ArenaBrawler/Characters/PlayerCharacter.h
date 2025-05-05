@@ -46,8 +46,16 @@ class ARENABRAWLER_API APlayerCharacter : public ABaseCharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 	
-public:
-	APlayerCharacter();
+	/** Sprint Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SprintAction;
+	
+	/** Walk and run speed to set the player MaxWalkSpeed when sprinting */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float WalkSpeed = 500;	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float RunSpeed = 1000;
 
 protected:
 
@@ -57,14 +65,18 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-
-protected:
+	/** Called for sprint input */
+	void StartSprinting(const FInputActionValue& Value);
+	void StopSprinting(const FInputActionValue& Value);
 
 	virtual void NotifyControllerChanged() override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
+
+	APlayerCharacter();
+
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraArm() const { return CameraSpringArm; }
 	/** Returns FollowCamera subobject **/
