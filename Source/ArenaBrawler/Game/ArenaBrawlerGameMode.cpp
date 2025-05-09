@@ -2,6 +2,7 @@
 
 #include "ArenaBrawlerGameMode.h"
 #include "Characters/ArenaBrawlerCharacter.h"
+#include "Controllers/PlayerControllerBase.h"
 #include "UObject/ConstructorHelpers.h"
 
 AArenaBrawlerGameMode::AArenaBrawlerGameMode()
@@ -12,4 +13,5 @@ AArenaBrawlerGameMode::AArenaBrawlerGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+	PlayerControllerClass = APlayerControllerBase::StaticClass();
 }

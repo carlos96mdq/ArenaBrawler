@@ -32,3 +32,28 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 }
 
+void ABaseCharacter::ReceiveDamage(float Amount)
+{
+	Health -= Amount;
+
+	if (GEngine)
+	{
+		FString DebugMsg = FString::Printf(TEXT("%s lost life and now has a current health of: %.2f"), *GetNameSafe(this),Health);
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, DebugMsg);
+	}
+
+	if (ReceiveDamageMontage && GetMesh()->GetAnimInstance())
+	{
+		GetMesh()->GetAnimInstance()->Montage_Play(ReceiveDamageMontage);
+	}
+
+	if (Health <= 0)
+	{
+		Die();
+	}
+}
+
+void ABaseCharacter::Die()
+{
+	Destroy();
+}

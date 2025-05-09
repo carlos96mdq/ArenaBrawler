@@ -33,6 +33,9 @@ Thumbs.db
 *.dylib
 *.exp
 
+# Imported Assests
+*.fbx
+
 # Unreal-specific
 *.xcodeproj
 *.xcworkspace
