@@ -22,19 +22,19 @@ class ARENABRAWLER_API APlayerCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 
-	/** Camera positioning the camera behind the character */
+	// Camera positioning the camera behind the character
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraSpringArm;
 
-	/** Follow camera */
+	// Follow camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
-	/** MappingContext */
+	// MappingContext
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* PlayerMappingContext;
 
-	/** Enhanced Input */
+	// Enhanced Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* JumpAction;
 
@@ -50,42 +50,32 @@ class ARENABRAWLER_API APlayerCharacter : public ABaseCharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* BasicAttackAction;
 
-	/** Animation Montages */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* BasicAttackMontage;
-
 protected:
 	
 	virtual void BeginPlay() override;
 
-	/** Called for movement input */
+	// Called for movement input
 	void Move(const FInputActionValue& Value);
 
-	/** Called for looking input */
+	// Called for looking input
 	void Look(const FInputActionValue& Value);
 
-	/** Called for sprint input */
+	// Called for sprint input
 	void StartSprinting(const FInputActionValue& Value);
 	void StopSprinting(const FInputActionValue& Value);
 
-	/** Called for attack input */
+	// Called for attack input
 	void BasicAttack(const FInputActionValue& Value);
-	virtual void AttackStarts(int Attack) override;
-	virtual void AttackDealsDamage() override;
-	virtual void AttackEnded() override;
 
 	virtual void NotifyControllerChanged() override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
-
 	APlayerCharacter();
 
-	virtual void OnMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload) override;
-
-	/** Returns CameraBoom subobject **/
+	// Returns CameraBoom subobject
 	FORCEINLINE class USpringArmComponent* GetCameraArm() const { return CameraSpringArm; }
-	/** Returns FollowCamera subobject **/
+	// Returns FollowCamera subobject
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };

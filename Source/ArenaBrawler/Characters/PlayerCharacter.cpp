@@ -30,7 +30,7 @@ APlayerCharacter::APlayerCharacter()
 	// This can be tweaked in the Character Blueprint in Editor
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
@@ -46,18 +46,15 @@ APlayerCharacter::APlayerCharacter()
 	FollowCamera->SetupAttachment(CameraSpringArm, USpringArmComponent::SocketName); // Attach the camera to the end of the spring arm and let the arm adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	// Set team for AI detection
+	TeamID = 1;
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) are set in the derived blueprint asset
 }
 
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Bind the AnimMontage notification with callbacks
-	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
-	{
-		AnimInstance->OnPlayMontageNotifyBegin.AddUniqueDynamic(this, &APlayerCharacter::OnMontageNotifyBegin);
-	}
 }
 
 void APlayerCharacter::NotifyControllerChanged()
@@ -154,68 +151,4 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::BasicAttack(const FInputActionValue& Value)
 {
 	AttackStarts(1);
-}
-
-void APlayerCharacter::AttackStarts(int Attack)
-{
-	if (CurrentAttack != 0)
-	{
-		return;
-	}
-
-	switch (Attack)
-	{
-	case 1:	// Basic attack
-		UE_LOG(LogPlayer, Display, TEXT("'%s' used base attack"), *GetNameSafe(this));
-
-		if (BasicAttackMontage && GetMesh()->GetAnimInstance())
-		{
-			CurrentAttack = Attack;
-			GetMesh()->GetAnimInstance()->Montage_Play(BasicAttackMontage);
-		}
-		break;
-	default:
-		break;
-	}
-}
-
-void APlayerCharacter::OnMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
-{
-	if (NotifyName == "DealDamage")
-	{
-		AttackDealsDamage();
-	}
-	else if (NotifyName == "AttackEnded")
-	{
-		AttackEnded();
-	}
-}
-
-void APlayerCharacter::AttackDealsDamage()
-{
-	//TODO For now we don't care about the attack type. Just do damage.
-	FVector Start = GetActorLocation();
-	FVector End = Start + GetActorForwardVector() * BasicAttackRange;
-	FCollisionShape Shape = FCollisionShape::MakeSphere(1.0f);
-
-	FHitResult HitResult;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
-
-	bool bHit = GetWorld()->SweepSingleByChannel(HitResult, Start, End, FQuat::Identity, ECC_Pawn, Shape, Params);
-	//DrawDebugCylinder(GetWorld(), Start, End, 1.0f, 5, FColor::Red, true, 10.0f);
-
-	if (bHit)
-	{
-		ABaseCharacter* HitCharacter = Cast<ABaseCharacter>(HitResult.GetActor());
-		if (HitCharacter)
-		{
-			HitCharacter->ReceiveDamage(20);
-		}
-	}
-}
-
-void APlayerCharacter::AttackEnded()
-{
-	CurrentAttack = 0;
 }

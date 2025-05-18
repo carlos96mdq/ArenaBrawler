@@ -13,5 +13,8 @@ UCLASS()
 class ARENABRAWLER_API AEnemyCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
+
+public:
+	AEnemyCharacter();
 	
 };
