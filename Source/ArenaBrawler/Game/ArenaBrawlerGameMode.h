@@ -6,10 +6,16 @@
 #include "GameFramework/GameModeBase.h"
 #include "ArenaBrawlerGameMode.generated.h"
 
+
 UCLASS(minimalapi)
 class AArenaBrawlerGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+
+protected:
+	virtual void BeginPlay() override;
+
+	TSubclassOf<class AEnemyCharacter> EnemyClass;
 
 public:
 	AArenaBrawlerGameMode();

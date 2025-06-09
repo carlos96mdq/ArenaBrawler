@@ -2,6 +2,9 @@
 
 
 #include "Characters/BaseCharacter.h"
+#include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/DamageType.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
@@ -10,6 +13,16 @@ ABaseCharacter::ABaseCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	CurrentHealth = MaxHealth;
+}
+
+void ABaseCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//Replicate current health.
+	DOREPLIFETIME(ABaseCharacter, CurrentHealth);
 }
 
 // Called when the game starts or when spawned
@@ -21,6 +34,13 @@ void ABaseCharacter::BeginPlay()
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{
 		AnimInstance->OnPlayMontageNotifyBegin.AddUniqueDynamic(this, &ABaseCharacter::OnMontageNotifyBegin);
+	}
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		const FString NetRoleStr = UEnum::GetValueAsString(GetLocalRole());
+		const FString Message = FString::Printf(TEXT("Owner: %s | Role: %s"), *PC->GetName(), *NetRoleStr);
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Cyan, Message);
 	}
 }
 
@@ -43,16 +63,25 @@ void ABaseCharacter::AttackStarts(int Attack)
 	{
 		return;
 	}
+	else
+	{
+		CurrentAttack = Attack;
+		ServerAttack(CurrentAttack);
+	}
+}
 
+void ABaseCharacter::ServerAttack_Implementation(int Attack)
+{
 	switch (Attack)
 	{
 	case 1:	// Basic attack
-		UE_LOG(LogCharacter, Display, TEXT("'%s' used basic attack"), *GetNameSafe(this));
-
-		if (BasicAttackMontage && GetMesh()->GetAnimInstance())
+		if (BasicAttackMontage)
 		{
-			CurrentAttack = Attack;
-			GetMesh()->GetAnimInstance()->Montage_Play(BasicAttackMontage);
+			MulticastPlayMontage(BasicAttackMontage);	// Play the attack animation of this character in all clients
+		}
+		else
+		{
+			UE_LOG(LogCharacter, Error, TEXT("BasicAttackMontage assets not found in '%s'"), *GetNameSafe(this));
 		}
 		break;
 	default:
@@ -62,13 +91,22 @@ void ABaseCharacter::AttackStarts(int Attack)
 
 void ABaseCharacter::OnMontageNotifyBegin(FName NotifyName, const FBranchingPointNotifyPayload& BranchingPayload)
 {
-	if (NotifyName == "DealDamage")
+	// Client-specific functionality
+	if (IsLocallyControlled())
 	{
-		AttackDealsDamage();
+		if (NotifyName == "AttackEnded")
+		{
+			AttackEnded();
+		}
 	}
-	else if (NotifyName == "AttackEnded")
+
+	// Server-specific functionality
+	if (GetLocalRole() == ROLE_Authority)
 	{
-		AttackEnded();
+		if (NotifyName == "DealDamage")
+		{
+			AttackDealsDamage();
+		}
 	}
 }
 
@@ -91,7 +129,9 @@ void ABaseCharacter::AttackDealsDamage()
 		ABaseCharacter* HitCharacter = Cast<ABaseCharacter>(HitResult.GetActor());
 		if (HitCharacter)
 		{
-			HitCharacter->ReceiveDamage(20);
+			//HitCharacter->ReceiveDamage(20);
+			TSubclassOf<class UDamageType> DamageType = UDamageType::StaticClass();	// To be implemented in the future
+			UGameplayStatics::ApplyDamage(HitCharacter, 20.f, GetInstigator()->Controller, this, DamageType);
 		}
 	}
 }
@@ -101,28 +141,74 @@ void ABaseCharacter::AttackEnded()
 	CurrentAttack = 0;
 }
 
-void ABaseCharacter::ReceiveDamage(float Amount)
+float ABaseCharacter::TakeDamage(float DamageTaken, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	Health -= Amount;
-
-	if (GEngine)
+	if (ReceiveDamageMontage)
 	{
-		FString DebugMsg = FString::Printf(TEXT("%s lost life and now has a current health of: %.2f"), *GetNameSafe(this),Health);
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, DebugMsg);
+		MulticastPlayMontage(ReceiveDamageMontage);
 	}
 
-	if (ReceiveDamageMontage && GetMesh()->GetAnimInstance())
-	{
-		GetMesh()->GetAnimInstance()->Montage_Play(ReceiveDamageMontage);
-	}
-
-	if (Health <= 0)
-	{
-		Die();
-	}
+	float DamageApplied = CurrentHealth - DamageTaken;
+	SetCurrentHealth(DamageApplied);
+	return DamageApplied;
 }
 
 void ABaseCharacter::Die()
 {
 	Destroy();
+}
+
+void ABaseCharacter::OnRep_CurrentHealth()
+{
+	OnHealthUpdate();
+}
+
+void ABaseCharacter::OnHealthUpdate()
+{
+	// Client-specific functionality
+	if (IsLocallyControlled())
+	{
+		const FString NetRoleStr = UEnum::GetValueAsString(GetLocalRole());
+		FString Message = FString::Printf(TEXT("You now have %f health remaining (%s)"), CurrentHealth, *NetRoleStr);
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, Message);
+
+		if (CurrentHealth <= 0)
+		{
+			Message = FString::Printf(TEXT("You have been killed (%s)"), *NetRoleStr);
+			GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, Message);
+		}
+	}
+
+	// Server-specific functionality
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		const FString NetRoleStr = UEnum::GetValueAsString(GetLocalRole());
+		const FString Message = FString::Printf(TEXT("%s now has %f health remaining (%s)"), *GetNameSafe(this), CurrentHealth, *NetRoleStr);
+		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, Message);
+
+		if (CurrentHealth <= 0)
+		{
+			Die();
+		}
+	}
+
+	// Functions that occur on all machines.
+
+}
+
+void ABaseCharacter::SetCurrentHealth(float HealthValue)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		CurrentHealth = FMath::Clamp(HealthValue, 0.f, MaxHealth);
+		OnHealthUpdate();
+	}
+}
+
+void ABaseCharacter::MulticastPlayMontage_Implementation(UAnimMontage* Montage)
+{
+	if (Montage && GetMesh()->GetAnimInstance())
+	{
+		GetMesh()->GetAnimInstance()->Montage_Play(Montage);
+	}
 }
