@@ -15,6 +15,8 @@ class UBrawlerAttributeSet;
 class UGameplayAbility;
 class UGameplayEffect;
 struct FOnAttributeChangeData;
+class UWidgetComponent;
+class UOHHealthBar;
 
 UCLASS()
 class ARENABRAWLER_API ABaseCharacter : public ACharacter, public IGenericTeamAgentInterface, public IAbilitySystemInterface
@@ -52,6 +54,12 @@ protected:
 	// AI detection
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	uint8 TeamID = 0; // Default 0 = neutral
+
+	// Widget Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	UWidgetComponent* HealthBarComponent;
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UOHHealthBar> HealthBarWidgetClass;
 
 	// DEPRECATED
 	//UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)

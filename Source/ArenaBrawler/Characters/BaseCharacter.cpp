@@ -2,12 +2,14 @@
 
 
 #include "Characters/BaseCharacter.h"
+#include "Components/WidgetComponent.h"
 #include "Controllers/PlayerControllerBase.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "Abilities/BrawlerAbilitySystemComponent.h"
 #include "Abilities/BrawlerAttributeSet.h"
 #include "UI/HUDBase.h"
+#include "UI/OHHealthBar.h"
 #include "GameFramework/DamageType.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
@@ -23,6 +25,16 @@ ABaseCharacter::ABaseCharacter()
 	AbilitySystemComponent->SetIsReplicated(true);
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	AttributeSet = CreateDefaultSubobject<UBrawlerAttributeSet>(TEXT("AttributeSet"));
+
+	// Create a health bar over the character head only if it isn't the player
+	if (!IsNetMode(NM_DedicatedServer) && !IsLocallyControlled())
+	{
+		HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
+		HealthBarComponent->SetupAttachment(RootComponent);
+		HealthBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+		HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);	// Always facing the camera
+		HealthBarComponent->SetDrawSize(FVector2D(120.f, 18.f));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -59,6 +71,28 @@ void ABaseCharacter::BeginPlay()
 			if (AHUDBase* HUD = Cast<AHUDBase>(PC->GetHUD()))
 			{
 				HUD->UpdateHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+			}
+		}
+		if (HealthBarComponent)
+		{
+			HealthBarComponent->SetVisibility(false);
+		}
+	}
+
+	// Create a health bar over the character head only if it isn't the player
+	if (!IsNetMode(NM_DedicatedServer) && !IsLocallyControlled() )
+	{
+		if (HealthBarWidgetClass)
+		{
+			HealthBarComponent->SetWidgetClass(HealthBarWidgetClass);
+			HealthBarComponent->InitWidget();
+			
+			if (UUserWidget* WidgetInstance = HealthBarComponent->GetUserWidgetObject())
+			{
+				if (UOHHealthBar* HealthBar = Cast<UOHHealthBar>(WidgetInstance))
+				{
+					HealthBar->UpdateHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+				}
 			}
 		}
 	}
@@ -157,6 +191,18 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 		if (Health <= 0)
 		{
 			Die();
+		}
+	}
+
+	// General
+	if (HealthBarComponent)
+	{
+		if (UUserWidget* WidgetInstance = HealthBarComponent->GetUserWidgetObject())
+		{
+			if (UOHHealthBar* HealthBar = Cast<UOHHealthBar>(WidgetInstance))
+			{
+				HealthBar->UpdateHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+			}
 		}
 	}
 }
