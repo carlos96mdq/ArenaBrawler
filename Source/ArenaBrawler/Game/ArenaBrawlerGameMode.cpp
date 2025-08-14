@@ -3,6 +3,7 @@
 #include "ArenaBrawlerGameMode.h"
 #include "Controllers/PlayerControllerBase.h"
 #include "Characters/EnemyCharacter.h"
+#include "UI/HUDBase.h"
 #include "UObject/ConstructorHelpers.h"
 
 AArenaBrawlerGameMode::AArenaBrawlerGameMode()
@@ -22,6 +23,7 @@ AArenaBrawlerGameMode::AArenaBrawlerGameMode()
     }
 
 	PlayerControllerClass = APlayerControllerBase::StaticClass();
+    HUDClass = AHUDBase::StaticClass();
 }
 
 void AArenaBrawlerGameMode::BeginPlay()

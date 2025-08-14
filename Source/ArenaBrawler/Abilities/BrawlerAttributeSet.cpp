@@ -14,6 +14,7 @@ void UBrawlerAttributeSet::GetLifetimeReplicatedProps(TArray <FLifetimeProperty>
 
 	//Replicate Health attribute
 	DOREPLIFETIME(UBrawlerAttributeSet, Health);
+	DOREPLIFETIME(UBrawlerAttributeSet, MaxHealth);
 }
 
 void UBrawlerAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)

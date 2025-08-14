@@ -26,7 +26,7 @@ class ARENABRAWLER_API UBrawlerAttributeSet : public UAttributeSet
 protected:
     UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Health)
     FGameplayAttributeData Health = 0;
-    UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+    UPROPERTY(BlueprintReadOnly, Category = "Attributes", Replicated)
     FGameplayAttributeData MaxHealth = 0;
     UPROPERTY(BlueprintReadOnly, Category = "Attributes")
     FGameplayAttributeData Damage = 0;

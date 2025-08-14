@@ -2,10 +2,12 @@
 
 
 #include "Characters/BaseCharacter.h"
+#include "Controllers/PlayerControllerBase.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
 #include "Abilities/BrawlerAbilitySystemComponent.h"
 #include "Abilities/BrawlerAttributeSet.h"
+#include "UI/HUDBase.h"
 #include "GameFramework/DamageType.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
@@ -46,6 +48,18 @@ void ABaseCharacter::BeginPlay()
 		if (InitialGameplayEffects)
 		{
 			AbilitySystemComponent->ApplyGameplayEffectToSelf(InitialGameplayEffects->GetDefaultObject<UGameplayEffect>(), 0.f, AbilitySystemComponent->MakeEffectContext());
+		}
+	}
+
+	// Update HUD
+	if (IsLocallyControlled())
+	{
+		if (APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetController()))
+		{
+			if (AHUDBase* HUD = Cast<AHUDBase>(PC->GetHUD()))
+			{
+				HUD->UpdateHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+			}
 		}
 	}
 
@@ -119,6 +133,19 @@ void ABaseCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 			{
 				Message = FString::Printf(TEXT("You have been killed (%s)"), *NetRoleStr);
 				GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, Message);
+			}
+
+			// Update HUD
+			if (APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetController()))
+			{
+				if (AHUDBase* HUD = Cast<AHUDBase>(PC->GetHUD()))
+				{
+					HUD->UpdateHealth(Health, AttributeSet->GetMaxHealth());
+				}
+				else
+				{
+					UE_LOG(LogCharacter, Error, TEXT("PlayerHUD wasn't found in '%s'"), *GetNameSafe(this));
+				}
 			}
 		}
 	}
