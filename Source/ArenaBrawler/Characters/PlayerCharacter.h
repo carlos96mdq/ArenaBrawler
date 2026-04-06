@@ -39,6 +39,9 @@ class ARENABRAWLER_API APlayerCharacter : public ABaseCharacter
 	UInputAction* JumpAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ExitGameAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -53,6 +56,9 @@ class ARENABRAWLER_API APlayerCharacter : public ABaseCharacter
 protected:
 	
 	virtual void BeginPlay() override;
+
+	// Called for exit input
+	void ExitGame(const FInputActionValue& Value);
 
 	// Called for movement input
 	void Move(const FInputActionValue& Value);

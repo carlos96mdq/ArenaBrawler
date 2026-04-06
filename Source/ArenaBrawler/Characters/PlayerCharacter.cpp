@@ -10,6 +10,8 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Controllers/PlayerControllerBase.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogPlayer);
 
@@ -79,6 +81,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+		// Exiting game
+		EnhancedInputComponent->BindAction(ExitGameAction, ETriggerEvent::Started, this, &APlayerCharacter::ExitGame);
 
 		// Attacks
 		EnhancedInputComponent->BindAction(BasicAttackAction, ETriggerEvent::Completed, this, &APlayerCharacter::BasicAttack);
@@ -151,4 +156,17 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::BasicAttack(const FInputActionValue& Value)
 {
 	AttackStarts(1);
+}
+
+void APlayerCharacter::ExitGame(const FInputActionValue& Value)
+{
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+
+	if (APlayerControllerBase* PC = Cast<APlayerControllerBase>(GetController()))
+	{
+		UKismetSystemLibrary::QuitGame(this, PC, EQuitPreference::Quit, false);
+	}
 }
